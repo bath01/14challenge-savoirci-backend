@@ -1,18 +1,23 @@
-FROM node:20-alpine AS builder
+# ---------- Build ----------
+FROM node:20-slim AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
 COPY prisma ./prisma
-COPY src ./src
-
+COPY prisma.config.ts ./prisma.config.ts
 RUN npx prisma generate
+
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine AS production
+# ---------- Runtime ----------
+FROM node:20-slim
+
+ENV NODE_ENV=production
 
 WORKDIR /app
 
@@ -20,13 +25,10 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY prisma.config.ts ./prisma.config.ts
+RUN npx prisma generate
 
-COPY --from=builder /app/dist ./dist
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
+COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
-
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+CMD ["node", "dist/server.js"]

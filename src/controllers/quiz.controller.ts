@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import prisma from '../config/prisma';
 import * as sessionService from '../services/session.service';
 import * as quizService from '../services/quiz.service';
+import { prisma } from '../utils/prisma';
 
 const QUESTION_TIME_LIMIT = parseInt(process.env.QUESTION_TIME_LIMIT || '15');
 

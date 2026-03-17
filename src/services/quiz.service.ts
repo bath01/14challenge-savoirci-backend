@@ -1,5 +1,5 @@
-import prisma from '../config/prisma';
 import { QuestionWithAnswers } from '../types/quiz.types';
+import { prisma } from '../utils/prisma';
 
 export const getCategoryById = async (categoryId: number) => {
   return prisma.category.findUnique({

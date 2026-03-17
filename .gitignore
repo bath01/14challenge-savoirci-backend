@@ -30,3 +30,5 @@ Thumbs.db
 # Misc
 coverage/
 .nyc_output/
+
+/src/generated/prisma
