@@ -368,6 +368,250 @@ Retourne les résultats complets du quiz : score, pourcentage de réussite et d�
 
 ---
 
+---
+
+### CRUD — Catégories
+
+#### `GET /admin/categories`
+
+Retourne toutes les catégories avec le nombre de questions associées.
+
+**Réponse `200`**
+
+```json
+{
+  "categories": [
+    { "id": 1, "name": "Histoire", "slug": "histoire", "description": "...", "questionCount": 10, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+---
+
+#### `GET /admin/categories/:id`
+
+Retourne une catégorie par son ID.
+
+**Réponse `200`**
+
+```json
+{ "id": 1, "name": "Histoire", "slug": "histoire", "description": "...", "questionCount": 10, "createdAt": "...", "updatedAt": "..." }
+```
+
+---
+
+#### `POST /admin/categories`
+
+Crée une nouvelle catégorie.
+
+**Corps de la requête**
+
+```json
+{ "name": "Politique", "slug": "politique", "description": "La vie politique ivoirienne." }
+```
+
+| Champ         | Type   | Requis | Description                  |
+|---------------|--------|--------|------------------------------|
+| `name`        | string | oui    | Nom de la catégorie          |
+| `slug`        | string | oui    | Identifiant unique URL-safe  |
+| `description` | string | non    | Description                  |
+
+**Réponse `201`**
+
+```json
+{ "id": 6, "name": "Politique", "slug": "politique", "description": "...", "createdAt": "...", "updatedAt": "..." }
+```
+
+---
+
+#### `PUT /admin/categories/:id`
+
+Met à jour une catégorie. Tous les champs sont optionnels.
+
+**Corps de la requête**
+
+```json
+{ "name": "Politique & Institutions", "description": "Mise à jour de la description." }
+```
+
+**Réponse `200`** — catégorie mise à jour.
+
+---
+
+#### `DELETE /admin/categories/:id`
+
+Supprime une catégorie ainsi que toutes ses questions et réponses (cascade).
+
+**Réponse `204`** — aucun contenu.
+
+---
+
+### CRUD — Questions
+
+#### `GET /admin/questions`
+
+Retourne toutes les questions. Filtrable par catégorie.
+
+**Paramètre query optionnel**
+
+| Paramètre    | Type    | Description                         |
+|--------------|---------|-------------------------------------|
+| `categoryId` | integer | Filtre les questions par catégorie  |
+
+**Réponse `200`**
+
+```json
+{
+  "questions": [
+    { "id": 1, "text": "Qui était le premier président ?", "categoryId": 1, "answerCount": 4, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+---
+
+#### `GET /admin/questions/:id`
+
+Retourne une question avec ses réponses.
+
+**Réponse `200`**
+
+```json
+{
+  "id": 1,
+  "text": "Qui était le premier président de la Côte d'Ivoire ?",
+  "categoryId": 1,
+  "createdAt": "...",
+  "updatedAt": "...",
+  "answers": [
+    { "id": 1, "text": "Félix Houphouët-Boigny", "isCorrect": true,  "questionId": 1, "createdAt": "...", "updatedAt": "..." },
+    { "id": 2, "text": "Alassane Ouattara",       "isCorrect": false, "questionId": 1, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+---
+
+#### `POST /admin/questions`
+
+Crée une nouvelle question.
+
+**Corps de la requête**
+
+```json
+{ "text": "Quelle est la capitale économique ?", "categoryId": 2 }
+```
+
+| Champ        | Type    | Requis | Description             |
+|--------------|---------|--------|-------------------------|
+| `text`       | string  | oui    | Texte de la question    |
+| `categoryId` | integer | oui    | ID de la catégorie      |
+
+**Réponse `201`** — question créée.
+
+---
+
+#### `PUT /admin/questions/:id`
+
+Met à jour une question.
+
+**Corps de la requête**
+
+```json
+{ "text": "Nouveau texte de la question.", "categoryId": 3 }
+```
+
+**Réponse `200`** — question mise à jour.
+
+---
+
+#### `DELETE /admin/questions/:id`
+
+Supprime une question et toutes ses réponses (cascade).
+
+**Réponse `204`** — aucun contenu.
+
+---
+
+### CRUD — Réponses
+
+#### `GET /answers`
+
+Retourne toutes les réponses. Filtrable par question.
+
+**Paramètre query optionnel**
+
+| Paramètre    | Type    | Description                       |
+|--------------|---------|-----------------------------------|
+| `questionId` | integer | Filtre les réponses par question  |
+
+**Réponse `200`**
+
+```json
+{
+  "answers": [
+    { "id": 1, "text": "Félix Houphouët-Boigny", "isCorrect": true,  "questionId": 1, "createdAt": "...", "updatedAt": "..." },
+    { "id": 2, "text": "Alassane Ouattara",       "isCorrect": false, "questionId": 1, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+---
+
+#### `GET /admin/answers/:id`
+
+Retourne une réponse par son ID.
+
+**Réponse `200`**
+
+```json
+{ "id": 1, "text": "Félix Houphouët-Boigny", "isCorrect": true, "questionId": 1, "createdAt": "...", "updatedAt": "..." }
+```
+
+---
+
+#### `POST /admin/answers`
+
+Crée une nouvelle réponse.
+
+**Corps de la requête**
+
+```json
+{ "text": "Grand-Bassam", "isCorrect": true, "questionId": 3 }
+```
+
+| Champ        | Type    | Requis | Description                               |
+|--------------|---------|--------|-------------------------------------------|
+| `text`       | string  | oui    | Texte de la réponse                       |
+| `questionId` | integer | oui    | ID de la question                         |
+| `isCorrect`  | boolean | non    | Indique si c'est la bonne réponse (`false` par défaut) |
+
+**Réponse `201`** — réponse créée.
+
+---
+
+#### `PUT /admin/answers/:id`
+
+Met à jour le texte ou le statut d'une réponse.
+
+**Corps de la requête**
+
+```json
+{ "text": "Grand-Bassam (corrigé)", "isCorrect": false }
+```
+
+**Réponse `200`** — réponse mise à jour.
+
+---
+
+#### `DELETE /admin/answers/:id`
+
+Supprime une réponse.
+
+**Réponse `204`** — aucun contenu.
+
+---
+
 ## Flux de jeu
 
 ```
