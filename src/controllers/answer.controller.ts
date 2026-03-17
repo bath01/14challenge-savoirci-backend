@@ -93,3 +93,54 @@ export const deleteAnswer = async (req: Request, res: Response, next: NextFuncti
     next(err);
   }
 };
+
+export const bulkCreateAnswers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { answers } = req.body;
+
+    if (!Array.isArray(answers) || answers.length === 0) {
+      res.status(400).json({ error: 'answers doit être un tableau non vide' });
+      return;
+    }
+
+    for (let i = 0; i < answers.length; i++) {
+      const { text, questionId } = answers[i];
+      if (!text || questionId === undefined) {
+        res.status(400).json({ error: `Entrée [${i}] : text et questionId sont requis` });
+        return;
+      }
+      if (isNaN(parseInt(questionId))) {
+        res.status(400).json({ error: `Entrée [${i}] : questionId invalide` });
+        return;
+      }
+    }
+
+    const questionIds = [...new Set(answers.map((a: { questionId: number }) => parseInt(a.questionId as unknown as string)))];
+    const existingQuestions = await prisma.question.findMany({
+      where: { id: { in: questionIds } },
+      select: { id: true },
+    });
+    const foundIds = existingQuestions.map((q) => q.id);
+    const missingIds = questionIds.filter((id) => !foundIds.includes(id));
+    if (missingIds.length > 0) {
+      res.status(404).json({ error: `Questions introuvables : ${missingIds.join(', ')}` });
+      return;
+    }
+
+    const created = await prisma.$transaction(
+      answers.map((a: { text: string; isCorrect?: boolean; questionId: number }) =>
+        prisma.answer.create({
+          data: {
+            text: a.text,
+            isCorrect: Boolean(a.isCorrect),
+            questionId: parseInt(a.questionId as unknown as string),
+          },
+        })
+      )
+    );
+
+    res.status(201).json({ count: created.length, answers: created });
+  } catch (err) {
+    next(err);
+  }
+};

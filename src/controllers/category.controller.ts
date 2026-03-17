@@ -93,3 +93,48 @@ export const deleteCategory = async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 };
+
+export const bulkCreateCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { categories } = req.body;
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+      res.status(400).json({ error: 'categories doit être un tableau non vide' });
+      return;
+    }
+
+    for (let i = 0; i < categories.length; i++) {
+      const { name, slug } = categories[i];
+      if (!name || !slug) {
+        res.status(400).json({ error: `Entrée [${i}] : name et slug sont requis` });
+        return;
+      }
+    }
+
+    const slugs = categories.map((c: { slug: string }) => c.slug);
+    const duplicateSlug = slugs.find((s: string, i: number) => slugs.indexOf(s) !== i);
+    if (duplicateSlug) {
+      res.status(400).json({ error: `Slug dupliqué dans la requête : "${duplicateSlug}"` });
+      return;
+    }
+
+    const existingSlugs = await prisma.category.findMany({
+      where: { slug: { in: slugs } },
+      select: { slug: true },
+    });
+    if (existingSlugs.length > 0) {
+      res.status(409).json({ error: `Slugs déjà utilisés : ${existingSlugs.map((c) => c.slug).join(', ')}` });
+      return;
+    }
+
+    const created = await prisma.$transaction(
+      categories.map((c: { name: string; slug: string; description?: string }) =>
+        prisma.category.create({ data: { name: c.name, slug: c.slug, description: c.description ?? null } })
+      )
+    );
+
+    res.status(201).json({ count: created.length, categories: created });
+  } catch (err) {
+    next(err);
+  }
+};

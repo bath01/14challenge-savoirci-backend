@@ -446,6 +446,43 @@ Supprime une catégorie ainsi que toutes ses questions et réponses (cascade).
 
 ---
 
+#### `POST /admin/categories/bulk`
+
+Crée plusieurs catégories en une seule requête (transaction atomique).
+
+**Corps de la requête**
+
+```json
+{
+  "categories": [
+    { "name": "Politique", "slug": "politique", "description": "La vie politique ivoirienne." },
+    { "name": "Sciences",  "slug": "sciences",  "description": "Les sciences et technologies." }
+  ]
+}
+```
+
+| Champ         | Type   | Requis | Description                 |
+|---------------|--------|--------|-----------------------------|
+| `name`        | string | oui    | Nom de la catégorie         |
+| `slug`        | string | oui    | Identifiant unique URL-safe |
+| `description` | string | non    | Description                 |
+
+**Réponse `201`**
+
+```json
+{
+  "count": 2,
+  "categories": [
+    { "id": 6, "name": "Politique", "slug": "politique", "description": "...", "createdAt": "...", "updatedAt": "..." },
+    { "id": 7, "name": "Sciences",  "slug": "sciences",  "description": "...", "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+> Si un slug est dupliqué dans la requête ou déjà présent en base, la transaction entière est annulée (`409`).
+
+---
+
 ### CRUD — Questions
 
 #### `GET /admin/questions`
@@ -533,6 +570,42 @@ Supprime une question et toutes ses réponses (cascade).
 
 ---
 
+#### `POST /admin/questions/bulk`
+
+Crée plusieurs questions en une seule requête (transaction atomique).
+
+**Corps de la requête**
+
+```json
+{
+  "questions": [
+    { "text": "Quelle est la monnaie de la CEDEAO ?",   "categoryId": 4 },
+    { "text": "Quel est le PIB de la Côte d'Ivoire ?", "categoryId": 4 }
+  ]
+}
+```
+
+| Champ        | Type    | Requis | Description          |
+|--------------|---------|--------|----------------------|
+| `text`       | string  | oui    | Texte de la question |
+| `categoryId` | integer | oui    | ID de la catégorie   |
+
+**Réponse `201`**
+
+```json
+{
+  "count": 2,
+  "questions": [
+    { "id": 51, "text": "Quelle est la monnaie de la CEDEAO ?",   "categoryId": 4, "createdAt": "...", "updatedAt": "..." },
+    { "id": 52, "text": "Quel est le PIB de la Côte d'Ivoire ?", "categoryId": 4, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+> Si un `categoryId` est introuvable, la transaction entière est annulée (`404`).
+
+---
+
 ### CRUD — Réponses
 
 #### `GET /answers`
@@ -609,6 +682,47 @@ Met à jour le texte ou le statut d'une réponse.
 Supprime une réponse.
 
 **Réponse `204`** — aucun contenu.
+
+---
+
+#### `POST /admin/answers/bulk`
+
+Crée plusieurs réponses en une seule requête (transaction atomique).
+
+**Corps de la requête**
+
+```json
+{
+  "answers": [
+    { "text": "Abidjan",      "isCorrect": false, "questionId": 51 },
+    { "text": "Accra",        "isCorrect": false, "questionId": 51 },
+    { "text": "Eco",          "isCorrect": true,  "questionId": 51 },
+    { "text": "Franc CEDEAO", "isCorrect": false, "questionId": 51 }
+  ]
+}
+```
+
+| Champ        | Type    | Requis | Description                                            |
+|--------------|---------|--------|--------------------------------------------------------|
+| `text`       | string  | oui    | Texte de la réponse                                    |
+| `questionId` | integer | oui    | ID de la question                                      |
+| `isCorrect`  | boolean | non    | Indique si c'est la bonne réponse (`false` par défaut) |
+
+**Réponse `201`**
+
+```json
+{
+  "count": 4,
+  "answers": [
+    { "id": 201, "text": "Abidjan",      "isCorrect": false, "questionId": 51, "createdAt": "...", "updatedAt": "..." },
+    { "id": 202, "text": "Accra",        "isCorrect": false, "questionId": 51, "createdAt": "...", "updatedAt": "..." },
+    { "id": 203, "text": "Eco",          "isCorrect": true,  "questionId": 51, "createdAt": "...", "updatedAt": "..." },
+    { "id": 204, "text": "Franc CEDEAO", "isCorrect": false, "questionId": 51, "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+> Si un `questionId` est introuvable, la transaction entière est annulée (`404`).
 
 ---
 
